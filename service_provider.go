@@ -976,6 +976,9 @@ func (sp *ServiceProvider) validateAssertion(assertion *Assertion, possibleReque
 		// IDP initiated assertions.
 		if !sp.AllowIDPInitiated {
 			for _, possibleRequestID := range possibleRequestIDs {
+				if subjectConfirmation.SubjectConfirmationData == nil {
+					continue
+				}
 				if subjectConfirmation.SubjectConfirmationData.InResponseTo == possibleRequestID {
 					requestIDvalid = true
 					break
