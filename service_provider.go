@@ -608,6 +608,15 @@ func (sp *ServiceProvider) validateDestination(response *etree.Element, response
 		return err
 	}
 
+	// do not require destination to match for attribute queries
+	if responseDom.Assertion != nil && responseDom.Assertion.Subject != nil {
+		for _, subjectConfirmation := range responseDom.Assertion.Subject.SubjectConfirmations {
+			if subjectConfirmation.Method == "urn:oasis:names:tc:SAML:2.0:cm:sender-vouches" {
+				return nil
+			}
+		}
+	}
+
 	// Compare if the response is signed OR the Destination is provided.
 	// (Even if the response is not signed, if the Destination is set it must match.)
 	if signed || responseDom.Destination != "" {
