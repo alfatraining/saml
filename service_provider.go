@@ -23,7 +23,7 @@ import (
 	dsig "github.com/russellhaering/goxmldsig"
 	"github.com/russellhaering/goxmldsig/etreeutils"
 
-	"github.com/crewjam/saml/xmlenc"
+	"github.com/alfatraining/saml/xmlenc"
 )
 
 // NameIDFormat is the format of the id
@@ -608,6 +608,15 @@ func (sp *ServiceProvider) validateDestination(response *etree.Element, response
 		return err
 	}
 
+	// do not require destination to match for attribute queries
+	if responseDom.Assertion != nil && responseDom.Assertion.Subject != nil {
+		for _, subjectConfirmation := range responseDom.Assertion.Subject.SubjectConfirmations {
+			if subjectConfirmation.Method == "urn:oasis:names:tc:SAML:2.0:cm:sender-vouches" {
+				return nil
+			}
+		}
+	}
+
 	// Compare if the response is signed OR the Destination is provided.
 	// (Even if the response is not signed, if the Destination is set it must match.)
 	if signed || responseDom.Destination != "" {
@@ -955,6 +964,10 @@ func (sp *ServiceProvider) validateAssertion(assertion *Assertion, possibleReque
 		return fmt.Errorf("issuer is not %q", sp.IDPMetadata.EntityID)
 	}
 	for _, subjectConfirmation := range assertion.Subject.SubjectConfirmations {
+		if subjectConfirmation.Method == "urn:oasis:names:tc:SAML:2.0:cm:sender-vouches" {
+			continue
+		}
+
 		requestIDvalid := false
 
 		// We *DO NOT* validate InResponseTo when AllowIDPInitiated is set. Here's why:
@@ -976,6 +989,9 @@ func (sp *ServiceProvider) validateAssertion(assertion *Assertion, possibleReque
 		// IDP initiated assertions.
 		if !sp.AllowIDPInitiated {
 			for _, possibleRequestID := range possibleRequestIDs {
+				if subjectConfirmation.SubjectConfirmationData == nil {
+					continue
+				}
 				if subjectConfirmation.SubjectConfirmationData.InResponseTo == possibleRequestID {
 					requestIDvalid = true
 					break

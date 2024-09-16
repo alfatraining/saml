@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/crewjam/saml"
+	"github.com/alfatraining/saml"
 )
 
 var _ RequestTracker = CookieRequestTracker{}
